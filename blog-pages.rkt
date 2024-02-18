@@ -1,6 +1,8 @@
 #lang typed/racket
+
 (require typed/web-server/http)
-(require "blog-core.rkt")
+(require "blog-core-model.rkt")
+(require "blog-rendering.rkt")
 (require/typed
  web-server/servlet/web
  [send/suspend/dispatch (-> (-> (-> (-> Request Response) String) Response) Response)])
