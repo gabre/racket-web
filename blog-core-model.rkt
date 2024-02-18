@@ -8,6 +8,9 @@
  [extract-binding/single (-> Symbol (Listof (Pairof Symbol String)) String)])
 
 (provide
+ settings
+ settings-blog-main-title
+ settings-blog
  post
  post-title
  post-body
@@ -36,6 +39,13 @@
    [posts : (Listof post)]
    )
   #:mutable
+  )
+
+(struct settings
+  (
+   [blog-main-title : String]
+   [blog : blog]
+   )
   )
 
 (: request->post-bindings (-> Request (Option (Listof (Pairof Symbol String)))))

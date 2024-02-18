@@ -9,47 +9,37 @@
 
 (provide post-list-page)
 
-(define blog-main-title "My Blog")
-
-(define BLOG
-  (blog
-   (list
-    (post "My first post" "Under Construction"
-          '("No." "Are you there?"))
-    (post "Second post" "I don't know yet." '())
-    (post "Third post" "3rd post: still empty." '()))))
-
-(: post-list-page (-> Request Response))
-(define (post-list-page _request)
+(: post-list-page (-> settings Request Response))
+(define (post-list-page settings _request)
   (: post->link+post (-> (-> (-> Request Response) String) post (Pairof String post)))
   (define (post->link+post embed/url post)
-    (cons (embed/url (curry post-details-page post)) post))
+    (cons (embed/url (lambda (r) (post-details-page settings post r))) post))
   (: response-generator (-> (-> (-> Request Response) String) Response))
   (define (response-generator embed/url)
     (response/xexpr
      (render-posts
-      blog-main-title
-      (for/list ([post (blog-posts BLOG)]) (post->link+post embed/url post))
-      (embed/url post-creator-page))))
+      (settings-blog-main-title settings)
+      (for/list ([post (blog-posts (settings-blog settings))]) (post->link+post embed/url post))
+      (embed/url (curry post-creator-page settings)))))
   (send/suspend/dispatch response-generator))
 
-(: post-details-page (-> post Request Response))
-(define (post-details-page post _request)
+(: post-details-page (-> settings post Request Response))
+(define (post-details-page settings post _request)
   (: response-generator (-> (-> (-> Request Response) String) Response))
   (define (response-generator embed/url)
     (response/xexpr
      (render-post-details
       post
-      (embed/url (curry confirm-comment-page post))
-      (embed/url post-list-page))))
+      (embed/url (lambda (r) (confirm-comment-page settings post r)))
+      (embed/url (curry post-list-page settings)))))
   (send/suspend/dispatch response-generator))
 
-(: confirm-comment-page (-> post Request Response))
-(define (confirm-comment-page post request)
+(: confirm-comment-page (-> settings post Request Response))
+(define (confirm-comment-page settings post request)
   (: add-comment-then-post-details-page (-> String Request Response))
   (define (add-comment-then-post-details-page comment request)
     (post-insert-comment! post comment)
-    (post-details-page post request))
+    (post-details-page settings post request))
   (: response-generator (-> (-> (-> Request Response) String) Response))
   (define (response-generator embed/url)
     (response/xexpr
@@ -59,11 +49,11 @@
           (render-comment-comfirmantion
            maybe-parsed-comment
            (embed/url (curry add-comment-then-post-details-page maybe-parsed-comment))
-           (embed/url (curry post-details-page post)))]))))
+           (embed/url (lambda (r) (post-details-page settings post r))))]))))
   (send/suspend/dispatch response-generator))
 
-(: post-creator-page (-> Request Response))
-(define (post-creator-page request)
+(: post-creator-page (-> settings Request Response))
+(define (post-creator-page settings request)
   (: response-generator (-> (-> (-> Request Response) String) Response))
   (define (response-generator embed/url)
     (response/xexpr
@@ -72,6 +62,6 @@
          [maybe-parsed-bindings
           (let
               ([new-post (bindings->post maybe-parsed-bindings)])
-            (blog-insert-post! BLOG new-post))])
-       (render-new-post-form (embed/url post-list-page)))))
+            (blog-insert-post! (settings-blog settings) new-post))])
+       (render-new-post-form (embed/url (curry post-list-page settings))))))
   (send/suspend/dispatch response-generator))
