@@ -13,7 +13,7 @@
   (blog
    (list
     (post "My first post" "Under Construction"
-          '("Are you there?" "No."))
+          '("No." "Are you there?"))
     (post "Second post" "I don't know yet." '())
     (post "Third post" "3rd post: still empty." '()))))
 
@@ -36,7 +36,28 @@
   (: response-generator (-> (-> (-> Request Response) String) Response))
   (define (response-generator embed/url)
     (response/xexpr
-     (render-post-details post (embed/url post-list-page))))
+     (render-post-details
+      post
+      (embed/url (curry confirm-comment-page post))
+      (embed/url post-list-page))))
+  (send/suspend/dispatch response-generator))
+
+(: confirm-comment-page (-> post Request Response))
+(define (confirm-comment-page post request)
+  (: add-comment-then-post-details-page (-> String Request Response))
+  (define (add-comment-then-post-details-page comment request)
+    (post-insert-comment! post comment)
+    (post-details-page post request))
+  (: response-generator (-> (-> (-> Request Response) String) Response))
+  (define (response-generator embed/url)
+    (response/xexpr
+     (let ([maybe-parsed-comment (request->comment request)])
+       (cond
+         [maybe-parsed-comment
+          (render-comment-comfirmantion
+           maybe-parsed-comment
+           (embed/url (curry add-comment-then-post-details-page maybe-parsed-comment))
+           (embed/url (curry post-details-page post)))]))))
   (send/suspend/dispatch response-generator))
 
 (: post-creator-page (-> Request Response))

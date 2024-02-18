@@ -13,13 +13,16 @@
  render-posts
  render-post-details
  render-post
+ render-comment-comfirmantion
  post
  blog
  blog-posts
  set-blog-posts!
  bindings->post
  request->post-bindings
+ request->comment
  blog-insert-post!
+ post-insert-comment!
  )
 
 (struct post
@@ -70,9 +73,9 @@
   (define title (post-title post))
   (define title-tag
     (if
-      maybe-detailed-view-link
-      `(a ((href ,maybe-detailed-view-link)) ,title)
-      (post-title post)))
+     maybe-detailed-view-link
+     `(a ((href ,maybe-detailed-view-link)) ,title)
+     (post-title post)))
   `((h2 ,title-tag)
     (p  ,(post-body post))))
 
@@ -81,12 +84,18 @@
   `(div
     ,@(render-post-body post detailed-view-link)))
 
-(: render-post-details (-> post String XExpr))
-(define (render-post-details post back-link)
+(: render-post-details (-> post String String XExpr))
+(define (render-post-details post confirm-page-link back-link)
   `(div
     ,@(render-post-body post #f)
     ,long-hr
     (p  ,(render-post-comments (post-comments post)))
+    ,long-hr
+    (form
+     ((action ,confirm-page-link))
+     (label "Add a new comment:")(br)
+     (input ((type "text") (id "comment") (name "comment")))(br)
+     (input ((type "submit") (value "Submit"))))
     ,long-hr
     (a ((href ,back-link)) "Go back")))
 
@@ -113,6 +122,14 @@
      (input ((type "submit") (value "Submit"))))(br)(br)
                                                 (a ((href ,link)) "Go back")))
 
+(: render-comment-comfirmantion (-> String String String XExpr))
+(define (render-comment-comfirmantion comment-text yes-link no-link)
+  `(div
+    (h3 "Do you really want to submit the following comment?")
+    (p ,comment-text)(br)
+    (a ((href ,yes-link)) "Yes")(br)
+    (a ((href ,no-link)) "No")(br)))
+
 (: request->post-bindings (-> Request (Option (Listof (Pairof Symbol String)))))
 (define (request->post-bindings request)
   (let
@@ -130,6 +147,15 @@
    (extract-binding/single 'title bindings)
    (extract-binding/single 'post bindings)
    (list)))
+
+(: request->comment (-> Request (Option String)))
+(define (request->comment request)
+  (let
+      ([bindings (request-bindings request)])
+    (if
+     (exists-binding? 'comment bindings)
+     (extract-binding/single 'comment bindings)
+     #f)))
 
 (: blog-insert-post! (-> blog post Void))
 (define (blog-insert-post! blog new-post)
