@@ -85,8 +85,8 @@
      ,long-hr
      (a ((href ,new-post-creator-link)) "Create a new post"))))
 
-(: render-new-post-form (->* (String String) ((Option post)) XExpr))
-(define (render-new-post-form title link [just-added-new-post #f])
+(: render-new-post-form (->* (String String String) ((Option post)) XExpr))
+(define (render-new-post-form title continuation-link back-link [just-added-new-post #f])
   (html
    title
    `(div
@@ -99,12 +99,13 @@
      (div
       (h2 "New Post")
       (form
+       ((action ,continuation-link))
        (label "Title")(br)
        (input ((type "text") (id "title") (name "title")))(br)
        (label "Text")(br)
        (input ((type "text") (id "post") (name "post")))(br)(br)
        (input ((type "submit") (value "Submit"))))(br)(br)
-                                                  (a ((href ,link)) "Go back")))))
+                                                  (a ((href ,back-link)) "Go back")))))
 
 (: render-comment-comfirmantion (-> String post-comment String String XExpr))
 (define (render-comment-comfirmantion title comment yes-link no-link)
