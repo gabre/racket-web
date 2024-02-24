@@ -8,7 +8,6 @@
  render-new-post-form
  render-posts
  render-post-details
- render-post
  render-comment-comfirmantion
  )
 
@@ -55,49 +54,72 @@
   `(div
     ,@(render-post-body post detailed-view-link)))
 
-(: render-post-details (-> post String String XExpr))
-(define (render-post-details post confirm-page-link back-link)
-  `(div
-    ,@(render-post-body post #f)
-    ,long-hr
-    (p  ,(render-post-comments (post-comments post)))
-    ,long-hr
-    (form
-     ((action ,confirm-page-link))
-     (label "Add a new comment:")(br)
-     (label "Username") nbsp (input ((type "text") (id "author") (name "author")))(br)
-     (label "Content") nbsp (input ((type "text") (id "comment") (name "comment")))(br)
-     (input ((type "submit") (value "Submit"))))
-    ,long-hr
-    (a ((href ,back-link)) "Go back")))
+(: render-post-details (-> String post String String XExpr))
+(define (render-post-details title post confirm-page-link back-link)
+  (html
+   title
+   `(div
+     ,@(render-post-body post #f)
+     ,long-hr
+     (p  ,(render-post-comments (post-comments post)))
+     ,long-hr
+     (form
+      ((action ,confirm-page-link))
+      (label "Add a new comment:")(br)
+      (label "Username") nbsp (input ((type "text") (id "author") (name "author")))(br)
+      (label "Content") nbsp (input ((type "text") (id "comment") (name "comment")))(br)
+      (input ((type "submit") (value "Submit"))))
+     ,long-hr
+     (a ((href ,back-link)) "Go back"))))
 
 (: render-posts (-> String (Listof (Pairof String post)) String XExpr))
 (define (render-posts title links+posts new-post-creator-link)
-  `(div
-    (h1 ,title)
-    ,@(map (lambda
-               ([detailed-view-link+post : (Pairof String post)])
-             (render-post (cdr detailed-view-link+post) (car detailed-view-link+post)))
-           links+posts)
-    ,long-hr
-    (a ((href ,new-post-creator-link)) "Create a new post")))
+  (html
+   title
+   `(div
+     (h1 ,title)
+     ,@(map (lambda
+                ([detailed-view-link+post : (Pairof String post)])
+              (render-post (cdr detailed-view-link+post) (car detailed-view-link+post)))
+            links+posts)
+     ,long-hr
+     (a ((href ,new-post-creator-link)) "Create a new post"))))
 
-(: render-new-post-form (-> String XExpr))
-(define (render-new-post-form link)
-  `(div
-    (h2 "New Post")
-    (form
-     (label "Title")(br)
-     (input ((type "text") (id "title") (name "title")))(br)
-     (label "Text")(br)
-     (input ((type "text") (id "post") (name "post")))(br)(br)
-     (input ((type "submit") (value "Submit"))))(br)(br)
-                                                (a ((href ,link)) "Go back")))
+(: render-new-post-form (->* (String String) ((Option post)) XExpr))
+(define (render-new-post-form title link [just-added-new-post #f])
+  (html
+   title
+   `(div
+     ,@(if
+        just-added-new-post
+        `((div
+           (p "Post added: " ,(post-title just-added-new-post))
+           ))
+        '())
+     (div
+      (h2 "New Post")
+      (form
+       (label "Title")(br)
+       (input ((type "text") (id "title") (name "title")))(br)
+       (label "Text")(br)
+       (input ((type "text") (id "post") (name "post")))(br)(br)
+       (input ((type "submit") (value "Submit"))))(br)(br)
+                                                  (a ((href ,link)) "Go back")))))
 
-(: render-comment-comfirmantion (-> post-comment String String XExpr))
-(define (render-comment-comfirmantion comment yes-link no-link)
-  `(div
-    (h3 "Do you really want to submit the following comment?")
-    (p ,(post-comment-content comment))(br)
-    (a ((href ,yes-link)) "Yes")(br)
-    (a ((href ,no-link)) "No")(br)))
+(: render-comment-comfirmantion (-> String post-comment String String XExpr))
+(define (render-comment-comfirmantion title comment yes-link no-link)
+  (html
+   title
+   `(div
+     (h3 "Do you really want to submit the following comment?")
+     (p ,(post-comment-content comment))(br)
+     (a ((href ,yes-link)) "Yes")(br)
+     (a ((href ,no-link)) "No")(br))))
+
+(: html (-> String XExpr XExpr))
+(define (html title xexpr)
+  `(html (head (title ,title)
+               (link ((rel "stylesheet")
+                      (href "/w3.css")
+                      (type "text/css"))))
+         (body ,xexpr)))
