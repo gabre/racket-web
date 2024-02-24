@@ -18,9 +18,9 @@
 (define long-hr
   '(hr ((style "width:70%; margin-inline-start: 0;"))))
 
-(: render-post-comments (-> (Listof String) XExpr))
+(: render-post-comments (-> (Listof post-comment) XExpr))
 (define (render-post-comments comments)
-  (: render-comment-with-separator (-> String (Listof XExpr) (Listof XExpr)))
+  (: render-comment-with-separator (-> post-comment (Listof XExpr) (Listof XExpr)))
   (define (render-comment-with-separator comment result-so-far)
     (let
         ([rendered-comment (render-comment comment)])
@@ -35,9 +35,9 @@
           '((p "/no comments/"))
           rendered-comments)))
 
-(: render-comment (-> String XExpr))
+(: render-comment (-> post-comment XExpr))
 (define (render-comment comment)
-  `(p ,comment))
+  `(p (b ,(post-comment-author comment)) ": " ,(post-comment-content comment)))
 
 (: render-post-body (-> post (Option String) (Listof XExpr)))
 (define (render-post-body post maybe-detailed-view-link)
@@ -65,7 +65,8 @@
     (form
      ((action ,confirm-page-link))
      (label "Add a new comment:")(br)
-     (input ((type "text") (id "comment") (name "comment")))(br)
+     (label "Username") nbsp (input ((type "text") (id "author") (name "author")))(br)
+     (label "Content") nbsp (input ((type "text") (id "comment") (name "comment")))(br)
      (input ((type "submit") (value "Submit"))))
     ,long-hr
     (a ((href ,back-link)) "Go back")))
@@ -93,10 +94,10 @@
      (input ((type "submit") (value "Submit"))))(br)(br)
                                                 (a ((href ,link)) "Go back")))
 
-(: render-comment-comfirmantion (-> String String String XExpr))
-(define (render-comment-comfirmantion comment-text yes-link no-link)
+(: render-comment-comfirmantion (-> post-comment String String XExpr))
+(define (render-comment-comfirmantion comment yes-link no-link)
   `(div
     (h3 "Do you really want to submit the following comment?")
-    (p ,comment-text)(br)
+    (p ,(post-comment-content comment))(br)
     (a ((href ,yes-link)) "Yes")(br)
     (a ((href ,no-link)) "No")(br)))

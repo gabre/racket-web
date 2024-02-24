@@ -36,7 +36,7 @@
 
 (: confirm-comment-page (-> settings post Request Response))
 (define (confirm-comment-page settings post request)
-  (: add-comment-then-post-details-page (-> String Request Response))
+  (: add-comment-then-post-details-page (-> post-comment Request Response))
   (define (add-comment-then-post-details-page comment request)
     (post-insert-comment! post comment)
     (post-details-page settings post request))
@@ -49,7 +49,8 @@
           (render-comment-comfirmantion
            maybe-parsed-comment
            (embed/url (curry add-comment-then-post-details-page maybe-parsed-comment))
-           (embed/url (lambda (r) (post-details-page settings post r))))]))))
+           (embed/url (lambda (r) (post-details-page settings post r))))]
+         [else (error "Unable to parse the comment.")]))))
   (send/suspend/dispatch response-generator))
 
 (: post-creator-page (-> settings Request Response))
@@ -62,6 +63,7 @@
          [maybe-parsed-bindings
           (let
               ([new-post (bindings->post maybe-parsed-bindings)])
-            (blog-insert-post! (settings-blog settings) new-post))])
+            (blog-insert-post! (settings-blog settings) new-post))]
+         [else (error "Unable to parse post.")])
        (render-new-post-form (embed/url (curry post-list-page settings))))))
   (send/suspend/dispatch response-generator))

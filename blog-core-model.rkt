@@ -11,6 +11,9 @@
  settings
  settings-blog-main-title
  settings-blog
+ post-comment
+ post-comment-author
+ post-comment-content
  post
  post-title
  post-body
@@ -25,11 +28,18 @@
  request->comment
  )
 
+(struct post-comment
+  (
+   [author : String]
+   [content : String]
+   )
+  )
+
 (struct post
   (
    [title : String]
    [body : String]
-   [comments : (Listof String)]
+   [comments : (Listof post-comment)]
    )
   #:mutable
   )
@@ -66,13 +76,18 @@
    (extract-binding/single 'post bindings)
    (list)))
 
-(: request->comment (-> Request (Option String)))
+(: request->comment (-> Request (Option post-comment)))
 (define (request->comment request)
   (let
       ([bindings (request-bindings request)])
     (if
-     (exists-binding? 'comment bindings)
-     (extract-binding/single 'comment bindings)
+     (and
+      (exists-binding? 'author bindings)
+      (exists-binding? 'comment bindings))
+     (post-comment
+      (extract-binding/single 'author bindings)
+      (extract-binding/single 'comment bindings)
+      )
      #f)))
 
 (: blog-insert-post! (-> blog post Void))
@@ -83,6 +98,6 @@
     new-post
     (blog-posts blog))))
 
-(: post-insert-comment! (-> post String Void))
+(: post-insert-comment! (-> post post-comment Void))
 (define (post-insert-comment! post comment)
   (set-post-comments! post (cons comment (post-comments post))))

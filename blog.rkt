@@ -7,7 +7,9 @@
   (blog
    (list
     (post "My first post" "Under Construction"
-          '("No." "Are you there?"))
+          (list
+            (post-comment "Someone" "No.")
+            (post-comment "User123" "Are you there?")))
     (post "Second post" "I don't know yet." '())
     (post "Third post" "3rd post: still empty." '()))))
 
