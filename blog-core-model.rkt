@@ -21,8 +21,10 @@
  post-insert-comment!
  blog
  blog-posts
+ blog-home
  blog-insert-post!
  set-blog-posts!
+ set-blog-home!
  bindings->post
  request->post-bindings
  request->comment
@@ -33,6 +35,7 @@
    [author : String]
    [content : String]
    )
+  #:prefab
   )
 
 (struct post
@@ -42,13 +45,16 @@
    [comments : (Listof post-comment)]
    )
   #:mutable
+  #:prefab
   )
 
 (struct blog
   (
+   [home : String]
    [posts : (Listof post)]
    )
   #:mutable
+  #:prefab
   )
 
 (struct settings

@@ -1,8 +1,13 @@
 #lang typed/racket
 
 (require typed/web-server/http)
-(require "blog-core-model.rkt")
+(require
+  (except-in "blog-core-model.rkt"
+             blog-insert-post!
+             post-insert-comment!))
 (require "blog-rendering.rkt")
+(require
+  (prefix-in persistence: "blog-persistence.rkt"))
 (require threading)
 (require/typed
  web-server/servlet/web
@@ -41,7 +46,7 @@
 (define (confirm-comment-page settings post request)
   (: handle-add-comment-then-post-details-page (-> post-comment Request Response))
   (define (handle-add-comment-then-post-details-page comment _)
-    (post-insert-comment! post comment)
+    (persistence:post-insert-comment! (settings-blog settings) post comment)
     (post-details-page settings post (redirect/get)))
   (: handle-no-comment-then-post-details-page (-> Request Response))
   (define (handle-no-comment-then-post-details-page _)
@@ -64,7 +69,7 @@
 (define (post-creator-page settings maybe-previous-new-post request)
   (: blog-insert-and-return-post (-> post post))
   (define (blog-insert-and-return-post new-post)
-    (blog-insert-post! (settings-blog settings) new-post)
+    (persistence:blog-insert-post! (settings-blog settings) new-post)
     new-post)
   (: handle-add-post-then-post-creator-page (-> Request Response))
   (define (handle-add-post-then-post-creator-page request)

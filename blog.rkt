@@ -2,18 +2,16 @@
 
 (require "blog-core-model.rkt")
 (require "blog-pages.rkt")
+(require
+  (prefix-in persistence: "blog-persistence.rkt"))
 
-(define the-blog
-  (blog
-   (list
-    (post "My first post" "Under Construction"
-          (list
-           (post-comment "Someone" "No.")
-           (post-comment "User123" "Are you there?")))
-    (post "Second post" "I don't know yet." '())
-    (post "Third post" "3rd post: still empty." '()))))
-
-(define blog-settings (settings "My Blog" the-blog))
+(define blog-db-path
+  (path->string
+   (build-path (current-directory) "the-blog-data.db")))
+(define blog-settings
+  (settings
+  "My Blog"
+  (persistence:initialize-blog! blog-db-path)))
 
 (define (start request)
   (response/xexpr

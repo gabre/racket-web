@@ -1,0 +1,1 @@
+#s((blog #(0 1)) "/home/gabre/code/racket-web/the-blog-data.db" (#s((post #(0 1 2)) "2nd post" "Another post. The second." (#s(post-comment "Editor" "Please feel free to comment.") #s(post-comment "Editor" "Hello people!"))) #s((post #(0 1 2)) "First post" "This is the very first post." ())))
