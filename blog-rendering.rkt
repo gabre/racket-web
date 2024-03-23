@@ -3,6 +3,8 @@
 (require typed/xml)
 (require racket/match)
 (require "blog-core-model.rkt")
+(require
+  (prefix-in persistence: "blog-persistence.rkt"))
 
 (provide
  render-new-post-form
@@ -40,14 +42,14 @@
 
 (: render-post-body (-> post (Option String) (Listof XExpr)))
 (define (render-post-body post maybe-detailed-view-link)
-  (define title (post-title post))
+  (define title (persistence:post-title post))
   (define title-tag
     (if
      maybe-detailed-view-link
      `(a ((href ,maybe-detailed-view-link)) ,title)
-     (post-title post)))
+     (persistence:post-title post)))
   `((h2 ,title-tag)
-    (p  ,(post-body post))))
+    (p  ,(persistence:post-body post))))
 
 (: render-post (-> post String XExpr))
 (define (render-post post detailed-view-link)
@@ -61,7 +63,7 @@
    `(div
      ,@(render-post-body post #f)
      ,long-hr
-     (p  ,(render-post-comments (post-comments post)))
+     (p  ,(render-post-comments (persistence:post-comments post)))
      ,long-hr
      (form
       ((action ,confirm-page-link))
@@ -85,7 +87,7 @@
      ,long-hr
      (a ((href ,new-post-creator-link)) "Create a new post"))))
 
-(: render-new-post-form (->* (String String String) ((Option post)) XExpr))
+(: render-new-post-form (->* (String String String) ((Option post-title+body)) XExpr))
 (define (render-new-post-form title continuation-link back-link [just-added-new-post #f])
   (html
    title
@@ -93,7 +95,7 @@
      ,@(if
         just-added-new-post
         `((div
-           (p "Post added: " ,(post-title just-added-new-post))
+           (p "Post added: " ,(post-title+body-title just-added-new-post))
            ))
         '())
      (div

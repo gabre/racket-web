@@ -1,10 +1,7 @@
 #lang typed/racket
 
 (require typed/web-server/http)
-(require
-  (except-in "blog-core-model.rkt"
-             blog-insert-post!
-             post-insert-comment!))
+(require "blog-core-model.rkt")
 (require "blog-rendering.rkt")
 (require
   (prefix-in persistence: "blog-persistence.rkt"))
@@ -26,7 +23,7 @@
     (response/xexpr
      (render-posts
       (settings-blog-main-title settings)
-      (for/list ([post (blog-posts (settings-blog settings))]) (post->link+post embed/url post))
+      (for/list ([post (persistence:blog-posts (settings-blog settings))]) (post->link+post embed/url post))
       (embed/url (lambda (r) (post-creator-page settings #f r))))))
   (send/suspend/dispatch response-generator))
 
@@ -65,9 +62,9 @@
          [else (error "Unable to parse the comment.")]))))
   (send/suspend/dispatch response-generator))
 
-(: post-creator-page (-> settings (Option post) Request Response))
+(: post-creator-page (-> settings (Option post-title+body) Request Response))
 (define (post-creator-page settings maybe-previous-new-post request)
-  (: blog-insert-and-return-post (-> post post))
+  (: blog-insert-and-return-post (-> post-title+body post-title+body))
   (define (blog-insert-and-return-post new-post)
     (persistence:blog-insert-post! (settings-blog settings) new-post)
     new-post)

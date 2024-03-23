@@ -1,6 +1,7 @@
 #lang typed/racket
 
 (require typed/web-server/http)
+(require typed/db)
 (require/typed
  web-server/http/bindings
  [exists-binding? (-> Symbol (Listof (Pairof Symbol String)) Boolean)]
@@ -11,20 +12,17 @@
  settings
  settings-blog-main-title
  settings-blog
+ post-title+body
+ post-title+body-title
+ post-title+body-body
  post-comment
  post-comment-author
  post-comment-content
  post
- post-title
- post-body
- post-comments
- post-insert-comment!
+ post-id
+ post-blog
  blog
- blog-posts
- blog-home
- blog-insert-post!
- set-blog-posts!
- set-blog-home!
+ blog-db
  bindings->post
  request->post-bindings
  request->comment
@@ -35,26 +33,26 @@
    [author : String]
    [content : String]
    )
-  #:prefab
   )
 
 (struct post
   (
+   [blog : blog]
+   [id : Integer]
+   )
+  )
+
+(struct post-title+body
+  (
    [title : String]
    [body : String]
-   [comments : (Listof post-comment)]
    )
-  #:mutable
-  #:prefab
   )
 
 (struct blog
   (
-   [home : String]
-   [posts : (Listof post)]
+   [db : Connection]
    )
-  #:mutable
-  #:prefab
   )
 
 (struct settings
@@ -75,12 +73,11 @@
      bindings
      #f)))
 
-(: bindings->post (-> (Listof (Pairof Symbol String)) post))
+(: bindings->post (-> (Listof (Pairof Symbol String)) post-title+body))
 (define (bindings->post bindings)
-  (post
+  (post-title+body
    (extract-binding/single 'title bindings)
-   (extract-binding/single 'post bindings)
-   (list)))
+   (extract-binding/single 'post bindings)))
 
 (: request->comment (-> Request (Option post-comment)))
 (define (request->comment request)
@@ -95,15 +92,3 @@
       (extract-binding/single 'comment bindings)
       )
      #f)))
-
-(: blog-insert-post! (-> blog post Void))
-(define (blog-insert-post! blog new-post)
-  (set-blog-posts!
-   blog
-   (cons
-    new-post
-    (blog-posts blog))))
-
-(: post-insert-comment! (-> post post-comment Void))
-(define (post-insert-comment! post comment)
-  (set-post-comments! post (cons comment (post-comments post))))
