@@ -3,6 +3,11 @@
 (require typed/xml)
 (require racket/match)
 (require "blog-core-model.rkt")
+(require/typed "blog-formlets.rkt"
+               [new-post-formlet (Formlet post-title+body)]
+               [new-comment-formlet (Formlet post-comment)])
+(require/typed web-server/formlets
+               [formlet-display (All (A) (-> (Formlet A) (Listof XExpr)))])
 (require
   (prefix-in persistence: "blog-persistence.rkt"))
 
@@ -68,8 +73,7 @@
      (form
       ((action ,confirm-page-link))
       (label "Add a new comment:")(br)
-      (label "Username") nbsp (input ((type "text") (id "author") (name "author")))(br)
-      (label "Content") nbsp (input ((type "text") (id "comment") (name "comment")))(br)
+      ,@(formlet-display new-comment-formlet)
       (input ((type "submit") (value "Submit"))))
      ,long-hr
      (a ((href ,back-link)) "Go back"))))
@@ -102,12 +106,10 @@
       (h2 "New Post")
       (form
        ((action ,continuation-link))
-       (label "Title")(br)
-       (input ((type "text") (id "title") (name "title")))(br)
-       (label "Text")(br)
-       (input ((type "text") (id "post") (name "post")))(br)(br)
-       (input ((type "submit") (value "Submit"))))(br)(br)
-                                                  (a ((href ,back-link)) "Go back")))))
+       ,@(formlet-display new-post-formlet)
+       (input ((type "submit") (value "Submit"))))
+      (br)(br)
+      (a ((href ,back-link)) "Go back")))))
 
 (: render-comment-comfirmantion (-> String post-comment String String XExpr))
 (define (render-comment-comfirmantion title comment yes-link no-link)

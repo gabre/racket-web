@@ -1,15 +1,21 @@
-#lang typed/racket
+#lang typed/racket/shallow
 
 (require typed/web-server/http)
 (require "blog-core-model.rkt")
 (require "blog-rendering.rkt")
+(require/typed
+ "blog-formlets.rkt"
+ [new-comment-formlet (Formlet post-comment)]
+ [new-post-formlet (Formlet String)])
 (require
   (prefix-in persistence: "blog-persistence.rkt"))
-(require threading)
 (require/typed
  web-server/servlet/web
  [redirect/get (-> Request)]
  [send/suspend/dispatch (-> (-> (-> (-> Request Response) String) Response) Response)])
+(require/typed
+ web-server/formlets
+ [formlet-process (All (A) (-> (Formlet A) Request (Option A)))])
 
 (provide post-list-page)
 
@@ -51,7 +57,7 @@
   (: response-generator (-> (-> (-> Request Response) String) Response))
   (define (response-generator embed/url)
     (response/xexpr
-     (let ([maybe-parsed-comment (request->comment request)])
+     (let ([maybe-parsed-comment ((inst formlet-process post-comment) new-comment-formlet request)])
        (cond
          [maybe-parsed-comment
           (render-comment-comfirmantion
@@ -63,18 +69,12 @@
   (send/suspend/dispatch response-generator))
 
 (: post-creator-page (-> settings (Option post-title+body) Request Response))
-(define (post-creator-page settings maybe-previous-new-post request)
-  (: blog-insert-and-return-post (-> post-title+body post-title+body))
-  (define (blog-insert-and-return-post new-post)
-    (persistence:blog-insert-post! (settings-blog settings) new-post)
-    new-post)
+(define (post-creator-page settings maybe-previous-new-post _request)
   (: handle-add-post-then-post-creator-page (-> Request Response))
   (define (handle-add-post-then-post-creator-page request)
-    (let ([maybe-previous-new-post
-           (and~> request
-                  request->post-bindings
-                  bindings->post
-                  blog-insert-and-return-post)])
+    (let ([maybe-previous-new-post ((inst formlet-process post-title+body) new-post-formlet request)])
+      (when maybe-previous-new-post
+        (persistence:blog-insert-post! (settings-blog settings) maybe-previous-new-post))
       (post-creator-page settings maybe-previous-new-post (redirect/get))))
   (: response-generator (-> (-> (-> Request Response) String) Response))
   (define (response-generator embed/url)

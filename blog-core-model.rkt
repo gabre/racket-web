@@ -1,5 +1,6 @@
 #lang typed/racket
 
+(require typed/xml)
 (require typed/web-server/http)
 (require typed/db)
 (require/typed
@@ -23,10 +24,18 @@
  post-blog
  blog
  blog-db
- bindings->post
- request->post-bindings
- request->comment
+ XExprForest
+ Formlet
  )
+
+(define-type XExprForest
+  (Listof XExpr))
+(define-type (Formlet A)
+  (-> Integer
+      (Values
+       XExprForest
+       (-> (Listof binding:form) Any)
+       Integer)))
 
 (struct post-comment
   (
@@ -47,7 +56,7 @@
    [title : String]
    [body : String]
    )
-  )
+  #:transparent)
 
 (struct blog
   (
@@ -61,34 +70,3 @@
    [blog : blog]
    )
   )
-
-(: request->post-bindings (-> Request (Option (Listof (Pairof Symbol String)))))
-(define (request->post-bindings request)
-  (let
-      ([bindings (request-bindings request)])
-    (if
-     (and
-      (exists-binding? 'title bindings)
-      (exists-binding? 'post bindings))
-     bindings
-     #f)))
-
-(: bindings->post (-> (Listof (Pairof Symbol String)) post-title+body))
-(define (bindings->post bindings)
-  (post-title+body
-   (extract-binding/single 'title bindings)
-   (extract-binding/single 'post bindings)))
-
-(: request->comment (-> Request (Option post-comment)))
-(define (request->comment request)
-  (let
-      ([bindings (request-bindings request)])
-    (if
-     (and
-      (exists-binding? 'author bindings)
-      (exists-binding? 'comment bindings))
-     (post-comment
-      (extract-binding/single 'author bindings)
-      (extract-binding/single 'comment bindings)
-      )
-     #f)))
